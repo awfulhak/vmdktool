@@ -1,0 +1,30 @@
+#! /bin/sh
+
+set -e
+
+[ $# -eq 0 ] || { echo usage: mkrel >&2; exit 1; }
+make
+ver=$(./vmdktool -V | sed -n 's,vmdktool version ,,p')
+[ -n "$ver" ] || { echo vmdktool: No version >&2; exit 1; }
+arch=release/vmdktool-$ver.tar.gz
+[ ! -f $arch ] || { echo mkrel: version $ver already exists; exit 1; }
+
+rm -fr release/vmdktool-$ver
+mkdir -p release/vmdktool-$ver/t
+cp -fp Makefile *.[ch8] release/vmdktool-$ver
+cp -fp t/*.t release/vmdktool-$ver/t/
+tar -C release -czf $arch vmdktool-$ver
+rm -fr release/vmdktool-$ver
+ls -l $arch
+
+echo Copying to http://Awfulhak.org/vmdktool/
+cp $arch /usr/local/www/Awfulhak.org/data/vmdktool/
+
+echo Copying to ftp://Awfulhak.org/pub/vmdktool/
+cp $arch ~ftp/pub/vmdktool/
+
+echo Copying to http://www.FreeBSD.org/
+scp $arch freefall.FreeBSD.org:public_html/vmdktool/
+
+(cd ${arch%/*} && sha256 ${arch##*/})
+stat -f"SIZE (${arch##*/}) = %z" $arch
